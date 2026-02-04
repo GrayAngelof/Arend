@@ -1,0 +1,316 @@
+# Структура базы данных (по данным из CSV)
+
+## 📌 **Общая информация**
+- Всего таблиц: **15**
+- Схемы: **physical**, **business**, **fire**, **audit**
+
+---
+
+## 🏗️ **Схема `physical`** (Физическая структура комплекса)
+
+### **1. `complexes`** – Комплексы зданий
+| Колонка | Тип | Ограничения | Комментарий |
+|---------|-----|-------------|-------------|
+| id | integer | PK, NOT NULL | Первичный ключ, автоинкремент |
+| name | varchar(100) | NOT NULL, UNIQUE | Уникальное название комплекса |
+| description | text | – | – |
+| created_at | timestamp | – | – |
+| address | text | – | – |
+
+**Индексы:**
+- Первичный ключ: `complexes_pkey`
+- Уникальный: `complexes_name_key`
+
+---
+
+### **2. `buildings`** – Корпуса/здания комплекса
+| Колонка | Тип | Ограничения | Комментарий |
+|---------|-----|-------------|-------------|
+| id | integer | PK, NOT NULL | – |
+| complex_id | integer | FK | Ссылка на `complexes.id` |
+| name | varchar(100) | NOT NULL, UNIQUE | – |
+| address | text | – | – |
+| floors_count | integer | NOT NULL, CHECK | Общее количество этажей (должно быть > 0) |
+| status | varchar(20) | CHECK | Статус: active, inactive, renovation |
+| created_at | timestamp | – | – |
+
+**Индексы:**
+- PK: `buildings_pkey`
+- FK: `buildings_complex_id_fkey`
+- UNIQUE: `buildings_complex_id_name_key`
+- CHECK: `buildings_floors_count_check`, `buildings_status_check`
+
+---
+
+### **3. `floors`** – Этажи зданий
+| Колонка | Тип | Ограничения | Комментарий |
+|---------|-----|-------------|-------------|
+| id | integer | PK, NOT NULL | – |
+| building_id | integer | FK, NOT NULL | Ссылка на `buildings.id` |
+| number | integer | NOT NULL, UNIQUE | Номер этажа (0 и ниже - подвальные, 1 и выше - надземные) |
+| type | varchar(30) | CHECK | Тип этажа: office, technical, parking, retail |
+| plan_image_url | text | – | – |
+| created_at | timestamp | – | – |
+
+**Индексы:**
+- PK: `floors_pkey`
+- FK: `floors_building_id_fkey`
+- UNIQUE: `floors_building_id_number_key`
+- CHECK: `floors_type_check`
+
+---
+
+### **4. `rooms`** – Помещения на этажах
+| Колонка | Тип | Ограничения | Комментарий |
+|---------|-----|-------------|-------------|
+| id | integer | PK, NOT NULL | – |
+| floor_id | integer | FK, NOT NULL | Ссылка на `floors.id` |
+| number | varchar(20) | NOT NULL, UNIQUE | Номер помещения (строковый, может содержать буквы) |
+| area | numeric(10,2) | NOT NULL, CHECK | Площадь помещения в квадратных метрах |
+| type | varchar(30) | CHECK | Тип: office, warehouse, corridor, technical, retail, common |
+| status | varchar(20) | CHECK | Статус: free, occupied, reserved, renovation |
+| max_tenants | integer | – | – |
+| created_at | timestamp | – | – |
+
+**Индексы:**
+- PK: `rooms_pkey`
+- FK: `rooms_floor_id_fkey`
+- UNIQUE: `rooms_floor_id_number_key`
+- CHECK: `rooms_area_check`, `rooms_status_check`, `rooms_type_check`
+
+---
+
+### **5. `zones`** – Зоны внутри помещений
+| Колонка | Тип | Ограничения | Комментарий |
+|---------|-----|-------------|-------------|
+| id | integer | PK, NOT NULL | – |
+| room_id | integer | FK, NOT NULL | Ссылка на `rooms.id` |
+| name | varchar(100) | NOT NULL, UNIQUE | Название зоны (например: "У окна") |
+| description | text | – | – |
+| polygon_coordinates | jsonb | – | Координаты полигона зоны в формате JSON |
+| created_at | timestamp | – | – |
+
+**Индексы:**
+- PK: `zones_pkey`
+- FK: `zones_room_id_fkey`
+- UNIQUE: `zones_room_id_name_key`
+
+---
+
+## 💼 **Схема `business`** (Бизнес-логика и аренда)
+
+### **6. `tenants`** – Арендаторы помещений
+| Колонка | Тип | Ограничения | Комментарий |
+|---------|-----|-------------|-------------|
+| id | integer | PK, NOT NULL | – |
+| name | varchar(200) | NOT NULL | Краткое название (используется в поиске) |
+| legal_name | varchar(200) | – | Полное юридическое название |
+| tax_id | varchar(50) | – | ИНН |
+| contact_person | varchar(100) | – | – |
+| contact_phone | varchar(20) | – | – |
+| contact_email | varchar(100) | – | – |
+| status | varchar(20) | CHECK | Статус: active, inactive, suspended |
+| created_at | timestamp | – | – |
+| updated_at | timestamp | – | – |
+
+**Индексы:**
+- PK: `tenants_pkey`
+- CHECK: `tenants_status_check`
+
+---
+
+### **7. `contracts`** – Договоры аренды
+| Колонка | Тип | Ограничения | Комментарий |
+|---------|-----|-------------|-------------|
+| id | integer | PK, NOT NULL | – |
+| tenant_id | integer | FK, NOT NULL | Ссылка на `tenants.id` |
+| contract_number | varchar(50) | NOT NULL, UNIQUE | Уникальный номер договора (формат: Д-ГГГГ-№) |
+| start_date | date | NOT NULL, CHECK | – |
+| end_date | date | NOT NULL, CHECK | – |
+| status | varchar(20) | CHECK | – |
+| monthly_rate | numeric(15,2) | NOT NULL | Общая ежемесячная стоимость аренды в рублях |
+| payment_day | integer | CHECK | День месяца оплаты (1-31) |
+| created_at | timestamp | – | – |
+
+**Индексы:**
+- PK: `contracts_pkey`
+- FK: `contracts_tenant_id_fkey`
+- UNIQUE: `contracts_contract_number_key`
+- CHECK: `contracts_check`, `contracts_payment_day_check`, `contracts_status_check`
+
+---
+
+### **8. `placements`** – Размещения арендаторов в помещениях
+| Колонка | Тип | Ограничения | Комментарий |
+|---------|-----|-------------|-------------|
+| id | integer | PK, NOT NULL | – |
+| contract_id | integer | FK, NOT NULL | Ссылка на `contracts.id` |
+| room_id | integer | NOT NULL | Ссылка на `physical.rooms.id` |
+| usage_type | varchar(30) | CHECK | – |
+| area_used | numeric(10,2) | NOT NULL, CHECK | Фактически используемая площадь |
+| rate | numeric(15,2) | NOT NULL | Ставка аренды для этого помещения в рублях |
+| start_date | date | NOT NULL, CHECK | – |
+| end_date | date | CHECK | Дата окончания аренды (NULL - бессрочная) |
+| status | varchar(20) | CHECK | – |
+| created_at | timestamp | – | – |
+
+**Индексы:**
+- PK: `placements_pkey`
+- FK: `placements_contract_id_fkey`
+- CHECK: `placements_area_used_check`, `placements_check`, `placements_status_check`, `placements_usage_type_check`
+
+---
+
+### **9. `payments`** – Платежи по договорам
+| Колонка | Тип | Ограничения | Комментарий |
+|---------|-----|-------------|-------------|
+| id | integer | PK, NOT NULL | – |
+| contract_id | integer | FK, NOT NULL | Ссылка на `contracts.id` |
+| amount | numeric(15,2) | NOT NULL | Сумма платежа в рублях |
+| payment_date | date | NOT NULL | – |
+| period_start | date | NOT NULL, CHECK | Начало оплачиваемого периода |
+| period_end | date | NOT NULL, CHECK | Конец оплачиваемого периода |
+| status | varchar(20) | CHECK | Статус: paid, pending, overdue |
+| payment_method | varchar(30) | – | – |
+| created_at | timestamp | – | – |
+
+**Индексы:**
+- PK: `payments_pkey`
+- FK: `payments_contract_id_fkey`
+- CHECK: `payments_check`, `payments_status_check`
+
+---
+
+## 🔥 **Схема `fire`** (Система пожарной сигнализации)
+
+### **10. `buses`** – Шины (линии связи) пожарной сигнализации
+| Колонка | Тип | Ограничения | Комментарий |
+|---------|-----|-------------|-------------|
+| id | integer | PK, NOT NULL | – |
+| name | varchar(50) | NOT NULL, UNIQUE | – |
+| description | text | – | – |
+| building_id | integer | NOT NULL | Ссылка на `physical.buildings.id` |
+| status | varchar(20) | CHECK | Статус: active, inactive, faulty |
+| last_check | timestamp | – | Время последней проверки |
+| created_at | timestamp | – | – |
+
+**Индексы:**
+- PK: `buses_pkey`
+- UNIQUE: `buses_name_key`
+- CHECK: `buses_status_check`
+
+---
+
+### **11. `sensors`** – Датчики пожарной сигнализации
+| Колонка | Тип | Ограничения | Комментарий |
+|---------|-----|-------------|-------------|
+| id | integer | PK, NOT NULL | – |
+| device_id | varchar(50) | NOT NULL, UNIQUE | Уникальный серийный номер устройства |
+| bus_id | integer | FK, NOT NULL | Ссылка на `buses.id` |
+| room_id | integer | – | Ссылка на `physical.rooms.id` |
+| zone_id | integer | – | Ссылка на `zones.id` |
+| type | varchar(30) | NOT NULL, CHECK | Тип: smoke, heat, manual, gas, water |
+| model | varchar(100) | – | – |
+| installation_date | date | NOT NULL | – |
+| last_maintenance | date | – | – |
+| status | varchar(20) | CHECK | Статус: normal, triggered, disabled, faulty, maintenance |
+| battery_level | integer | CHECK | – |
+| created_at | timestamp | – | – |
+
+**Индексы:**
+- PK: `sensors_pkey`
+- FK: `sensors_bus_id_fkey`
+- UNIQUE: `sensors_device_id_key`
+- CHECK: `sensors_battery_level_check`, `sensors_status_check`, `sensors_type_check`
+
+---
+
+### **12. `sensor_events`** – История событий датчиков
+| Колонка | Тип | Ограничения | Комментарий |
+|---------|-----|-------------|-------------|
+| id | integer | PK, NOT NULL | – |
+| sensor_id | integer | FK, NOT NULL | Ссылка на `sensors.id` |
+| event_type | varchar(30) | NOT NULL, CHECK | Тип: triggered, normal, battery_low, disconnected, test |
+| old_status | varchar(20) | – | – |
+| new_status | varchar(20) | NOT NULL | – |
+| value | numeric(10,2) | – | Измеренное значение (например, температура) |
+| description | text | – | – |
+| resolved_at | timestamp | – | Время разрешения события |
+| resolved_by | integer | – | – |
+| created_at | timestamp | – | – |
+
+**Индексы:**
+- PK: `sensor_events_pkey`
+- FK: `sensor_events_sensor_id_fkey`
+- CHECK: `sensor_events_event_type_check`
+
+---
+
+### **13. `emergency_scenarios`** – Аварийные сценарии
+| Колонка | Тип | Ограничения | Комментарий |
+|---------|-----|-------------|-------------|
+| id | integer | PK, NOT NULL | – |
+| name | varchar(100) | NOT NULL | – |
+| description | text | – | – |
+| conditions | jsonb | NOT NULL | Условия срабатывания в формате JSON |
+| actions | jsonb | NOT NULL | Действия при срабатывании в формате JSON |
+| priority | integer | CHECK | Приоритет (1 - наивысший, 10 - низший) |
+| is_active | boolean | – | – |
+| created_at | timestamp | – | – |
+
+**Индексы:**
+- PK: `emergency_scenarios_pkey`
+- CHECK: `emergency_scenarios_priority_check`
+
+---
+
+## 📊 **Схема `audit`** (Аудит и логирование действий)
+
+### **14. `change_log`** – Лог всех изменений во всех таблицах
+| Колонка | Тип | Ограничения | Комментарий |
+|---------|-----|-------------|-------------|
+| id | bigint | PK, NOT NULL | – |
+| table_name | varchar(100) | NOT NULL | – |
+| record_id | integer | NOT NULL | – |
+| operation | varchar(10) | NOT NULL, CHECK | Тип операции: INSERT, UPDATE, DELETE |
+| old_data | jsonb | – | Данные до изменения |
+| new_data | jsonb | – | Данные после изменения |
+| changed_by | varchar(100) | – | Идентификатор пользователя/системы |
+| changed_at | timestamp | – | – |
+| ip_address | inet | – | – |
+
+**Индексы:**
+- PK: `change_log_pkey`
+- CHECK: `change_log_operation_check`
+
+---
+
+### **15. `user_action_log`** – Лог действий пользователей
+| Колонка | Тип | Ограничения | Комментарий |
+|---------|-----|-------------|-------------|
+| id | bigint | PK, NOT NULL | – |
+| user_id | integer | – | – |
+| action | varchar(100) | NOT NULL | Тип действия (например: login, tenant_search) |
+| entity_type | varchar(50) | – | – |
+| entity_id | integer | – | – |
+| details | jsonb | – | Детали действия в формате JSON |
+| ip_address | inet | – | – |
+| user_agent | text | – | Информация о клиентском приложении |
+| performed_at | timestamp | – | – |
+
+**Индексы:**
+- PK: `user_action_log_pkey`
+
+---
+
+## 🔗 **Основные связи между таблицами**
+1. `complexes` ← `buildings` ← `floors` ← `rooms` ← `zones`
+2. `tenants` ← `contracts` ← `placements` → `rooms`
+3. `contracts` ← `payments`
+4. `buildings` ← `buses` ← `sensors` → `rooms`, `zones`
+5. `sensors` ← `sensor_events`
+6. Все таблицы → `change_log` (аудит изменений)
+
+---
+
+**Формат представления:** Таблицы сгруппированы по схемам, колонки развернуты с указанием типов, ограничений и комментариев.
