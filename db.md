@@ -4,18 +4,18 @@
 
 База данных организована в шесть тематических схем:
 
-1. `security`   – Управление пользователями, ролями и правами доступа
-2. `dictionary` – Централизованные справочники системы
-3. `physical`   – Физическая структура объектов недвижимости
-4. `business`   – Бизнес-процессы аренды и управления недвижимостью
-5. `fire`       – Пожарная безопасность и техническое обслуживание оборудования
-6. `audit`      – Аудит изменений и системное журналирование
+1. `security`   – Управление безопасностью и доступом
+2. `dictionary` – Централизованные справочники
+3. `physical`   – Физическая структура объектов
+4. `business`   – Бизнес-процессы
+5. `fire`       – Пожарная безопасность
+6. `audit`      – Аудит и журналирование
 
 ---
 
-## Схема `security`
+## Схема `security`.Эта схема обеспечивает централизованное управление доступом пользователей к данным системы с использованием ролевой модели и контекстных прав.
 
-### Таблица `users`
+### Таблица `users`. Пользователи системы. Хранит учётные данные пользователей, связывая их с реальными ответственными лицами из справочника.
 | Колонка               | Тип         | Ограничения            | Комментарий                                    |
 |-----------------------|-------------|------------------------|------------------------------------------------|
 | id                    | bigint      | NOT NULL               | Уникальный идентификатор пользователя системы  |
@@ -36,7 +36,7 @@
 - PRIMARY KEY (id)
 - FOREIGN KEY (person_id) REFERENCES dictionary.responsible_persons(id)
 
-### Таблица `roles`
+### Таблица `roles`. Роли в системе. Определяет наборы прав доступа (например: администратор, юрист, техник пожарной безопасности).
 | Колонка     | Тип         | Ограничения            | Комментарий                             |
 |-------------|-------------|------------------------|-----------------------------------------|
 | id          | bigint      | NOT NULL               | Уникальный идентификатор роли           |
@@ -51,7 +51,7 @@
 - PRIMARY KEY (id)
 - UNIQUE (code)
 
-### Таблица `user_roles`
+### Таблица `user_roles`. Назначение ролей пользователям. Связывает пользователей с ролями в определённом контексте (например, юрист только для конкретного контрагента).
 | Колонка             | Тип         | Ограничения            | Комментарий                         |
 |---------------------|-------------|------------------------|-------------------------------------|
 | id                  | bigint      | NOT NULL               | Уникальный идентификатор назначения |
@@ -74,7 +74,7 @@
 - FOREIGN KEY (role_id) REFERENCES roles(id)
 - FOREIGN KEY (granted_by) REFERENCES users(id)
 
-### Таблица `data_visibility_rules`
+### Таблица `data_visibility_rules`. Правила видимости данных. Определяет, какие данные видит каждая роль в различных контекстах (например, техник видит только пожарное оборудование).
 | Колонка            | Тип         | Ограничения            | Комментарий                      |
 |--------------------|-------------|------------------------|----------------------------------|
 | id                 | bigint      | NOT NULL               | Уникальный идентификатор правила |
@@ -93,7 +93,7 @@
 - PRIMARY KEY (id)
 - FOREIGN KEY (role_id) REFERENCES roles(id)
 
-### Таблица `session_log`
+### Таблица `session_log`. Журнал сессий пользователей. Отслеживает все сеансы работы пользователей в системе для аудита безопасности.
 | Колонка      | Тип         | Ограничения            | Комментарий                     |
 |--------------|-------------|------------------------|---------------------------------|
 | id           | bigint      | NOT NULL               | Уникальный идентификатор сессии |
@@ -113,9 +113,9 @@
 
 ---
 
-## Схема `dictionary`
+## Схема `dictionary`. Централизованные справочники. Содержит все общие справочные данные, используемые другими схемами. Обеспечивает единообразие и нормализацию данных.
 
-### Таблица `physical_room_types`
+### Таблица `physical_room_types`. Типы физических помещений. Справочник типов помещений (офис, склад, коридор) с характеристиками для расчёта арендной ставки.
 | Колонка              | Тип          | Ограничения            | Комментарий                                  |
 |----------------------|--------------|------------------------|----------------------------------------------|
 | id                   | bigint       | NOT NULL               | Первичный ключ, автоинкремент                |
@@ -133,7 +133,7 @@
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
 
-### Таблица `placement_usage_types`
+### Таблица `placement_usage_types`. Типы использования площади. Определяет, как арендатор будет использовать помещение (офисное, складское, торговое), влияет на ставку аренды.
 | Колонка                    | Тип          | Ограничения            | Комментарий                                        |
 |----------------------------|--------------|------------------------|----------------------------------------------------|
 | id                         | bigint       | NOT NULL               | Первичный ключ, автоинкремент                      |
@@ -151,7 +151,7 @@
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
 
-### Таблица `sensor_types`
+### Таблица `sensor_types`. Типы датчиков пожарной сигнализации. Справочник типов датчиков (дымовые, тепловые, ручные) с параметрами обслуживания.
 | Колонка             | Тип         | Ограничения               | Комментарий                            |
 |---------------------|-------------|---------------------------|----------------------------------------|
 | id                  | bigint      | NOT NULL                  | Первичный ключ, автоинкремент          |
@@ -167,7 +167,29 @@
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
 
-### Таблица `counterparties`
+### Таблица `sensor_event_types` – Типы событий датчиков
+*Справочник типов событий датчиков пожарной сигнализации с описаниями и категориями.*
+
+| Колонка         | Тип         | Ограничения             | Комментарий                                        |
+|-----------------|-------------|-------------------------|----------------------------------------------------|
+| id              | bigint      | NOT NULL                | Уникальный идентификатор типа события              |
+| code            | text        | NOT NULL UNIQUE         | Машинный код типа события                          |
+| name            | text        | NOT NULL                | Человекочитаемое название                          |
+| description     | text        |                         | Подробное описание типа события                    |
+| category        | text        | NOT NULL                | Категория: alarm, fault, status, test, maintenance |
+| severity        | text        | NOT NULL DEFAULT 'info' | Важность: info, warning, error, critical           |
+| requires_action | boolean     | DEFAULT false           | Требует ли ручного вмешательства                   |
+| auto_resolve    | boolean     | DEFAULT false           | Может ли разрешиться автоматически                 |
+| display_order   | integer     | DEFAULT 0               | Порядок отображения в интерфейсе                   |
+| is_active       | boolean     | DEFAULT true            | Активен ли тип события                             |
+| created_at      | timestamptz | NOT NULL DEFAULT now()  | Дата создания записи                               |
+| updated_at      | timestamptz | NOT NULL DEFAULT now()  | Дата обновления записи                             |
+
+**Ключи и ограничения:**
+- PRIMARY KEY (id)
+- UNIQUE (code)
+
+### Таблица `counterparties`. Контрагенты системы. Универсальная таблица для всех организаций: арендодателей, арендаторов, обслуживающих компаний, поставщиков.
 | Колонка        | Тип         | Ограничения                   | Комментарий                                          |
 |----------------|-------------|-------------------------------|------------------------------------------------------|
 | id             | bigint      | NOT NULL                      | Уникальный идентификатор контрагента                 |
@@ -187,7 +209,7 @@
 - PRIMARY KEY (id)
 - FOREIGN KEY (status_code) REFERENCES counterparty_statuses(code)
 
-### Таблица `responsible_persons`
+### Таблица `responsible_persons`. Ответственные лица. Сотрудники и контактные лица контрагентов с категоризацией для разграничения видимости.
 | Колонка            | Тип         | Ограничения            | Комментарий                                                             |
 |--------------------|-------------|------------------------|-------------------------------------------------------------------------|
 | id                 | bigint      | NOT NULL               | Уникальный идентификатор ответственного лица                            |
@@ -212,7 +234,7 @@
 - FOREIGN KEY (counterparty_id) REFERENCES counterparties(id)
 - FOREIGN KEY (role_code) REFERENCES role_catalog(code)
 
-### Таблица `role_catalog`
+### Таблица `role_catalog`.  Каталог должностей и ролей. Справочник должностей (юрист, техник, бухгалтер) для классификации ответственных лиц.
 | Колонка       | Тип         | Ограничения            | Комментарий                                                                |
 |---------------|-------------|------------------------|----------------------------------------------------------------------------|
 | id            | bigint      | NOT NULL               | Уникальный идентификатор роли                                              |
@@ -228,7 +250,7 @@
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
 
-### Таблица `contact_categories`
+### Таблица `contact_categories`. Категории контактов. Определяет, кто может видеть контактные данные (например, только юристы видят юридические контакты).
 | Колонка       | Тип         | Ограничения            | Комментарий                                     |
 |---------------|-------------|------------------------|-------------------------------------------------|
 | id            | bigint      | NOT NULL               | Уникальный идентификатор категории              |
@@ -242,7 +264,7 @@
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
 
-### Таблица `counterparty_statuses`
+### Таблица `counterparty_statuses`. Статусы контрагентов. Управляет жизненным циклом организаций (арендодателей, арендаторов, поставщиков) в системе.
 | Колонка       | Тип          | Ограничения      | Комментарий                              |
 |---------------|--------------|------------------|------------------------------------------|
 | id            | bigint       | NOT NULL         | Уникальный идентификатор статуса         |
@@ -257,7 +279,7 @@
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
 
-### Таблица `room_statuses`
+### Таблица `room_statuses`. Статусы помещений. Определяет текущее состояние и доступность помещений для аренды.
 | Колонка       | Тип          | Ограничения     | Комментарий                                  |
 |---------------|--------------|-----------------|----------------------------------------------|
 | id            | bigint       | NOT NULL        | Уникальный идентификатор статуса             |
@@ -273,7 +295,7 @@
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
 
-### Таблица `contract_statuses`
+### Таблица `contract_statuses`. Статусы договоров. Отслеживает жизненный цикл договоров аренды от создания до завершения.
 | Колонка       | Тип          | Ограничения     | Комментарий                                     |
 |---------------|--------------|-----------------|-------------------------------------------------|
 | id            | bigint       | NOT NULL        | Уникальный идентификатор статуса                |
@@ -289,7 +311,7 @@
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
 
-### Таблица `placement_statuses`
+### Таблица `placement_statuses`. Статусы размещений. Управляет конкретными размещениями арендаторов в помещениях.
 | Колонка       | Тип          | Ограничения            | Комментарий                                 |
 |---------------|--------------|-----------------|----------------------------------------------------|
 | id            | bigint       | NOT NULL        | Уникальный идентификатор статуса                   |
@@ -304,86 +326,86 @@
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
 
-### Таблица `payment_statuses`
-| Колонка      | Тип         | Ограничения            | Комментарий                             |
-|--------------|-------------|------------------------|-----------------------------------------|
-| id           | bigint      | NOT NULL               | Уникальный идентификатор статуса       |
-| code         | varchar(20) | NOT NULL UNIQUE        | Код статуса: pending, processed, failed, refunded |
-| name         | varchar(100)| NOT NULL               | Название статуса                        |
-| description  | text        |                        | Описание                                |
-| is_initial   | boolean     | DEFAULT false          | Можно ли установить при создании        |
-| is_success   | boolean     | DEFAULT false          | Успешный ли платеж                     |
-| display_order| integer     | DEFAULT 0              | Порядок отображения                    |
-| created_at   | timestamptz | DEFAULT now()          | Дата создания записи                   |
-| updated_at   | timestamptz | DEFAULT now()          | Дата обновления записи                 |
+### Таблица `payment_statuses`. Статусы платежей. Определяет состояние финансовых операций в системе.
+| Колонка       | Тип         | Ограничения     | Комментарий                                       |
+|---------------|-------------|-----------------|---------------------------------------------------|
+| id            | bigint      | NOT NULL        | Уникальный идентификатор статуса                  |
+| code          | varchar(20) | NOT NULL UNIQUE | Код статуса: pending, processed, failed, refunded |
+| name          | varchar(100)| NOT NULL        | Название статуса                                  |
+| description   | text        |                 | Описание                                          |
+| is_initial    | boolean     | DEFAULT false   | Можно ли установить при создании                  |
+| is_success    | boolean     | DEFAULT false   | Успешный ли платеж                                |
+| display_order | integer     | DEFAULT 0       | Порядок отображения                               |
+| created_at    | timestamptz | DEFAULT now()   | Дата создания записи                              |
+| updated_at    | timestamptz | DEFAULT now()   | Дата обновления записи                            |
 
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
 
-### Таблица `equipment_statuses`
-| Колонка      | Тип         | Ограничения            | Комментарий                             |
-|--------------|-------------|------------------------|-----------------------------------------|
-| id           | bigint      | NOT NULL               | Уникальный идентификатор статуса       |
-| code         | varchar(20) | NOT NULL UNIQUE        | Код статуса: active, inactive, maintenance, decommissioned |
-| name         | varchar(100)| NOT NULL               | Название статуса                        |
-| description  | text        |                        | Описание                                |
-| is_initial   | boolean     | DEFAULT false          | Можно ли установить при создании        |
-| is_operational| boolean    | DEFAULT true           | Работоспособен ли в этом статусе        |
-| display_order| integer     | DEFAULT 0              | Порядок отображения                    |
-| created_at   | timestamptz | DEFAULT now()          | Дата создания записи                   |
-| updated_at   | timestamptz | DEFAULT now()          | Дата обновления записи                 |
+### Таблица `equipment_statuses`. Статусы оборудования. Отслеживает работоспособность и обслуживание пожарного оборудования.
+| Колонка        | Тип          | Ограничения     | Комментарий                                                |
+|----------------|--------------|-----------------|------------------------------------------------------------|
+| id             | bigint       | NOT NULL        | Уникальный идентификатор статуса                           |
+| code           | varchar(20)  | NOT NULL UNIQUE | Код статуса: active, inactive, maintenance, decommissioned |
+| name           | varchar(100) | NOT NULL        | Название статуса                                           |
+| description    | text         |                 | Описание                                                   |
+| is_initial     | boolean      | DEFAULT false   | Можно ли установить при создании                           |
+| is_operational | boolean      | DEFAULT true    | Работоспособен ли в этом статусе                           |
+| display_order  | integer      | DEFAULT 0       | Порядок отображения                                        |
+| created_at     | timestamptz  | DEFAULT now()   | Дата создания записи                                       |
+| updated_at     | timestamptz  | DEFAULT now()   | Дата обновления записи                                     |
 
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
 
-### Таблица `building_statuses`
-| Колонка         | Тип         | Ограничения            | Комментарий                             |
-|-----------------|-------------|------------------------|-----------------------------------------|
-| id              | bigint      | NOT NULL               | Уникальный идентификатор статуса       |
-| code            | varchar(20) | NOT NULL UNIQUE        | Код статуса: operational, renovation, closed, demolished |
-| name            | varchar(100)| NOT NULL               | Название статуса                        |
-| description     | text        |                        | Описание                                |
-| is_initial      | boolean     | DEFAULT false          | Можно ли установить при создании        |
-| allows_occupancy| boolean     | DEFAULT true           | Можно ли занимать здание                |
-| display_order   | integer     | DEFAULT 0              | Порядок отображения                    |
-| created_at      | timestamptz | DEFAULT now()          | Дата создания записи                   |
-| updated_at      | timestamptz | DEFAULT now()          | Дата обновления записи                 |
+### Таблица `building_statuses`. Статусы зданий. Определяет общее состояние и доступность зданий для эксплуатации.
+| Колонка          | Тип          | Ограничения            | Комментарий                                       |
+|------------------|--------------|-----------------|----------------------------------------------------------|
+| id               | bigint       | NOT NULL        | Уникальный идентификатор статуса                         |
+| code             | varchar(20 ) | NOT NULL UNIQUE | Код статуса: operational, renovation, closed, demolished |
+| name             | varchar(100) | NOT NULL        | Название статуса                                         |
+| description      | text         |                 | Описание                                                 |
+| is_initial       | boolean      | DEFAULT false   | Можно ли установить при создании                         |
+| allows_occupancy | boolean      | DEFAULT true    | Можно ли занимать здание                                 |
+| display_order    | integer      | DEFAULT 0       | Порядок отображения                                      |
+| created_at       | timestamptz  | DEFAULT now()   | Дата создания записи                                     |
+| updated_at       | timestamptz  | DEFAULT now()   | Дата обновления записи                                   |
 
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
 
 ---
 
-## Схема `physical`
+## Схема `physical`. Физическая структура объектов. Моделирует иерархическую структуру объектов недвижимости, обеспечивая точное описание физического расположения.
 
-### Таблица `complexes`
-| Колонка    | Тип         | Ограничения            | Комментарий                             |
-|------------|-------------|------------------------|-----------------------------------------|
-| id         | bigint      | NOT NULL               | Уникальный идентификатор комплекса     |
-| name       | text        | NOT NULL UNIQUE        | Наименование комплекса                 |
-| description| text        |                        | Описание комплекса                     |
-| address    | text        |                        | Адрес комплекса                        |
-| owner_id   | bigint      |                        | Идентификатор контрагента-владельца    |
-| created_at | timestamptz | NOT NULL DEFAULT now() | Дата создания записи                   |
-| updated_at | timestamptz | NOT NULL DEFAULT now() | Дата обновления записи                 |
+### Таблица `complexes`. Комплексы зданий. Группирует здания в единый комплекс или является отдельным контрактом обслуживания.
+| Колонка     | Тип         | Ограничения            | Комментарий                          |
+|-------------|-------------|------------------------|--------------------------------------|
+| id          | bigint      | NOT NULL               | Уникальный идентификатор комплекса   |
+| name        | text        | NOT NULL UNIQUE        | Наименование комплекса               |
+| description | text        |                        | Описание комплекса                   |
+| address     | text        |                        | Адрес комплекса                      |
+| owner_id    | bigint      |                        | Идентификатор контрагента-владельца  |
+| created_at  | timestamptz | NOT NULL DEFAULT now() | Дата создания записи                 |
+| updated_at  | timestamptz | NOT NULL DEFAULT now() | Дата обновления записи               |
 
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
 - FOREIGN KEY (owner_id) REFERENCES dictionary.counterparties(id)
 
-### Таблица `buildings`
-| Колонка         | Тип         | Ограничения                         | Комментарий                             |
-|-----------------|-------------|-------------------------------------|-----------------------------------------|
-| id              | bigint      | NOT NULL                            | Уникальный идентификатор здания        |
-| complex_id      | bigint      | NOT NULL                            | Идентификатор комплекса                |
-| name            | text        | NOT NULL                            | Наименование здания                    |
-| description     | text        |                                     | Описание здания                        |
-| address         | text        |                                     | Адрес здания                           |
-| floors_count    | integer     | NOT NULL CHECK (floors_count > 0)   | Общее количество этажей                |
-| physical_type_id| bigint      | NOT NULL                            | Ссылка на physical_room_types.id       |
-| status_code     | varchar(20) | FK, NOT NULL                        | Ссылка на building_statuses.code       |
-| created_at      | timestamptz | NOT NULL DEFAULT now()              | Дата создания записи                   |
-| updated_at      | timestamptz | NOT NULL DEFAULT now()              | Дата обновления записи                 |
+### Таблица `buildings`Здания. Отдельные здания в составе комплекса с техническими характеристиками и статусом.
+| Колонка          | Тип         | Ограничения                         | Комментарий                     |
+|------------------|-------------|-------------------------------------|---------------------------------|
+| id               | bigint      | NOT NULL                          | Уникальный идентификатор здания   |
+| complex_id       | bigint      | NOT NULL                          | Идентификатор комплекса           |
+| name             | text        | NOT NULL                          | Наименование здания               |
+| description      | text        |                                   | Описание здания                   |
+| address          | text        |                                   | Адрес здания                      |
+| floors_count     | integer     | NOT NULL CHECK (floors_count > 0) | Общее количество этажей           |
+| physical_type_id | bigint      | NOT NULL                          | Ссылка на physical_room_types.id  |
+| status_code      | varchar(20) | FK, NOT NULL                      | Ссылка на building_statuses.code  |
+| created_at       | timestamptz | NOT NULL DEFAULT now()            | Дата создания записи              |
+| updated_at       | timestamptz | NOT NULL DEFAULT now()            | Дата обновления записи            |
 
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
@@ -392,18 +414,18 @@
 - FOREIGN KEY (physical_type_id) REFERENCES dictionary.physical_room_types(id)
 - FOREIGN KEY (status_code) REFERENCES dictionary.building_statuses(code)
 
-### Таблица `floors`
-| Колонка         | Тип         | Ограничения                         | Комментарий                             |
-|-----------------|-------------|-------------------------------------|-----------------------------------------|
-| id              | bigint      | NOT NULL                            | Уникальный идентификатор этажа         |
-| building_id     | bigint      | NOT NULL                            | Идентификатор здания                   |
-| number          | integer     | NOT NULL                            | Номер этажа (0 - цоколь, -1 - подвал)  |
-| description     | text        |                                     | Описание этажа                         |
-| physical_type_id| bigint      | NOT NULL                            | Ссылка на physical_room_types.id       |
-| status_code     | varchar(20) | FK, NOT NULL                        | Ссылка на room_statuses.code           |
-| plan_image_url  | text        |                                     | Ссылка на план этажа                   |
-| created_at      | timestamptz | NOT NULL DEFAULT now()              | Дата создания записи                   |
-| updated_at      | timestamptz | NOT NULL DEFAULT now()              | Дата обновления записи                 |
+### Таблица `floors`. Этажи зданий. Этажи в здании с номерацией (подвальные, цокольные, надземные) и планами расположения.
+| Колонка          | Тип         | Ограничения            | Комментарий                           |
+|------------------|-------------|------------------------|---------------------------------------|
+| id               | bigint      | NOT NULL               | Уникальный идентификатор этажа        |
+| building_id      | bigint      | NOT NULL               | Идентификатор здания                  |
+| number           | integer     | NOT NULL               | Номер этажа (0 - цоколь, -1 - подвал) |
+| description      | text        |                        | Описание этажа                        |
+| physical_type_id | bigint      | NOT NULL               | Ссылка на physical_room_types.id      |
+| status_code      | varchar(20) | FK, NOT NULL           | Ссылка на room_statuses.code          |
+| plan_image_url   | text        |                        | Ссылка на план этажа                  |
+| created_at       | timestamptz | NOT NULL DEFAULT now() | Дата создания записи                  |
+| updated_at       | timestamptz | NOT NULL DEFAULT now() | Дата обновления записи                |
 
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
@@ -412,19 +434,19 @@
 - FOREIGN KEY (physical_type_id) REFERENCES dictionary.physical_room_types(id)
 - FOREIGN KEY (status_code) REFERENCES dictionary.room_statuses(code)
 
-### Таблица `rooms`
-| Колонка         | Тип         | Ограничения                         | Комментарий                             |
-|-----------------|-------------|-------------------------------------|-----------------------------------------|
-| id              | bigint      | NOT NULL                            | Уникальный идентификатор помещения     |
-| floor_id        | bigint      | NOT NULL                            | Идентификатор этажа                    |
-| number          | text        | NOT NULL                            | Номер помещения (101А, 201Б)           |
-| description     | text        |                                     | Описание помещения                     |
-| area            | numeric(10,2)|                                     | Площадь помещения в кв.м.              |
-| physical_type_id| bigint      | NOT NULL                            | Ссылка на physical_room_types.id       |
-| status_code     | varchar(20) | FK, NOT NULL                        | Ссылка на room_statuses.code           |
-| max_tenants     | integer     |                                     | Максимальное количество арендаторов    |
-| created_at      | timestamptz | NOT NULL DEFAULT now()              | Дата создания записи                   |
-| updated_at      | timestamptz | NOT NULL DEFAULT now()              | Дата обновления записи                 |
+### Таблица `rooms`. Помещения. Конкретные помещения на этажах с площадью, типом и статусом доступности для аренды.
+| Колонка          | Тип           | Ограничения            | Комментарий                         |
+|------------------|---------------|------------------------|-------------------------------------|
+| id               | bigint        | NOT NULL               | Уникальный идентификатор помещения  |
+| floor_id         | bigint        | NOT NULL               | Идентификатор этажа                 |
+| number           | text          | NOT NULL               | Номер помещения (101А, 201Б)        |
+| description      | text          |                        | Описание помещения                  |
+| area             | numeric(10,2) |                        | Площадь помещения в кв.м.           |
+| physical_type_id | bigint        | NOT NULL               | Ссылка на physical_room_types.id    |
+| status_code      | varchar(20)   | FK, NOT NULL           | Ссылка на room_statuses.code        |
+| max_tenants      | integer       |                        | Максимальное количество арендаторов |
+| created_at       | timestamptz   | NOT NULL DEFAULT now() | Дата создания записи                |
+| updated_at       | timestamptz   | NOT NULL DEFAULT now() | Дата обновления записи              |
 
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
@@ -433,16 +455,16 @@
 - FOREIGN KEY (physical_type_id) REFERENCES dictionary.physical_room_types(id)
 - FOREIGN KEY (status_code) REFERENCES dictionary.room_statuses(code)
 
-### Таблица `zones`
-| Колонка            | Тип         | Ограничения            | Комментарий                             |
-|--------------------|-------------|------------------------|-----------------------------------------|
-| id                 | bigint      | NOT NULL               | Уникальный идентификатор зоны          |
-| room_id            | bigint      | NOT NULL               | Идентификатор помещения                |
-| name               | text        | NOT NULL               | Название зоны                          |
-| description        | text        |                        | Описание зоны                          |
-| polygon_coordinates| jsonb       |                        | Координаты полигона зоны в JSON        |
-| created_at         | timestamptz | NOT NULL DEFAULT now() | Дата создания записи                   |
-| updated_at         | timestamptz | NOT NULL DEFAULT now() | Дата обновления записи                 |
+### Таблица `zones`. Зоны в помещениях. Детализация планировки помещений для точного размещения оборудования и расчёта площадей.
+| Колонка             | Тип         | Ограничения            | Комментарий                     |
+|---------------------|-------------|------------------------|---------------------------------|
+| id                  | bigint      | NOT NULL               | Уникальный идентификатор зоны   |
+| room_id             | bigint      | NOT NULL               | Идентификатор помещения         |
+| name                | text        | NOT NULL               | Название зоны                   |
+| description         | text        |                        | Описание зоны                   |
+| polygon_coordinates | jsonb       |                        | Координаты полигона зоны в JSON |
+| created_at          | timestamptz | NOT NULL DEFAULT now() | Дата создания записи            |
+| updated_at          | timestamptz | NOT NULL DEFAULT now() | Дата обновления записи          |
 
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
@@ -451,22 +473,22 @@
 
 ---
 
-## Схема `business`
+## Схема `business`. Бизнес-процессы. Управляет всеми аспектами арендных отношений, от поиска арендатора до финансовых расчётов.
 
-### Таблица `contracts`
-| Колонка        | Тип         | Ограничения                         | Комментарий                             |
-|----------------|-------------|-------------------------------------|-----------------------------------------|
-| id             | bigint      | NOT NULL                            | Уникальный идентификатор договора      |
-| counterparty_id| bigint      | NOT NULL                            | Идентификатор контрагента-арендатора   |
-| contract_number| text        | NOT NULL UNIQUE                     | Уникальный номер договора              |
-| description    | text        |                                     | Описание договора                      |
-| start_date     | date        | NOT NULL                            | Дата начала действия                   |
-| end_date       | date        | NOT NULL                            | Дата окончания                         |
-| status_code    | varchar(20) | FK, NOT NULL                        | Ссылка на contract_statuses.code       |
-| monthly_payment| decimal(15,2)|                                     | Ежемесячный платеж                     |
-| payment_day    | integer     | CHECK (payment_day >= 1 AND payment_day <= 31) | День месяца оплаты     |
-| created_at     | timestamptz | NOT NULL DEFAULT now()              | Дата создания записи                   |
-| updated_at     | timestamptz | NOT NULL DEFAULT now()              | Дата обновления записи                 |
+### Таблица `contracts`. Договоры аренды. Договоры с арендаторами, включая сроки, условия оплаты и текущий статус.
+| Колонка         | Тип           | Ограничения                                    | Комментарий                          |
+|-----------------|---------------|------------------------------------------------|--------------------------------------|
+| id              | bigint        | NOT NULL                                       | Уникальный идентификатор договора    |
+| counterparty_id | bigint        | NOT NULL                                       | Идентификатор контрагента-арендатора |
+| contract_number | text          | NOT NULL UNIQUE                                | Уникальный номер договора            |
+| description     | text          |                                                | Описание договора                    |
+| start_date      | date          | NOT NULL                                       | Дата начала действия                 |
+| end_date        | date          | NOT NULL                                       | Дата окончания                       |
+| status_code     | varchar(20)   | FK, NOT NULL                                   | Ссылка на contract_statuses.code     |
+| monthly_payment | decimal(15,2) |                                                | Ежемесячный платеж                   |
+| payment_day     | integer       | CHECK (payment_day >= 1 AND payment_day <= 31) | День месяца оплаты                   |
+| created_at      | timestamptz   | NOT NULL DEFAULT now()                         | Дата создания записи                 |
+| updated_at      | timestamptz   | NOT NULL DEFAULT now()                         | Дата обновления записи               |
 
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
@@ -474,20 +496,20 @@
 - FOREIGN KEY (status_code) REFERENCES dictionary.contract_statuses(code)
 - CHECK (end_date > start_date)
 
-### Таблица `placements`
-| Колонка      | Тип         | Ограничения                         | Комментарий                             |
-|--------------|-------------|-------------------------------------|-----------------------------------------|
-| id           | bigint      | NOT NULL                            | Уникальный идентификатор размещения    |
-| contract_id  | bigint      | NOT NULL                            | Идентификатор договора аренды          |
-| room_id      | bigint      | NOT NULL                            | Идентификатор помещения                |
-| usage_type_id| bigint      | NOT NULL                            | Ссылка на placement_usage_types.id     |
-| start_date   | date        | NOT NULL                            | Дата начала аренды помещения           |
-| end_date     | date        |                                     | Дата окончания (NULL - бессрочно)      |
-| status_code  | varchar(20) | FK, NOT NULL                        | Ссылка на placement_statuses.code      |
-| area_used    | numeric(10,2)| NOT NULL CHECK (area_used > 0)     | Фактически используемая площадь        |
-| actual_rate  | decimal(15,2)|                                     | Ставка аренды для этого помещения      |
-| created_at   | timestamptz | NOT NULL DEFAULT now()              | Дата создания записи                   |
-| updated_at   | timestamptz | NOT NULL DEFAULT now()              | Дата обновления записи                 |
+### Таблица `placements`. Размещения арендаторов. Связывает договоры с конкретными помещениями, определяя используемую площадь и ставку аренды.
+| Колонка       | Тип           | Ограничения                    | Комментарий                         |
+|---------------|---------------|--------------------------------|-------------------------------------|
+| id            | bigint        | NOT NULL                       | Уникальный идентификатор размещения |
+| contract_id   | bigint        | NOT NULL                       | Идентификатор договора аренды       |
+| room_id       | bigint        | NOT NULL                       | Идентификатор помещения             |
+| usage_type_id | bigint        | NOT NULL                       | Ссылка на placement_usage_types.id  |
+| start_date    | date          | NOT NULL                       | Дата начала аренды помещения        |
+| end_date      | date          |                                | Дата окончания (NULL - бессрочно)   |
+| status_code   | varchar(20)   | FK, NOT NULL                   | Ссылка на placement_statuses.code   |
+| area_used     | numeric(10,2) | NOT NULL CHECK (area_used > 0) | Фактически используемая площадь     |
+| actual_rate   | decimal(15,2) |                                | Ставка аренды для этого помещения   |
+| created_at    | timestamptz   | NOT NULL DEFAULT now()         | Дата создания записи                |
+| updated_at    | timestamptz   | NOT NULL DEFAULT now()         | Дата обновления записи              |
 
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
@@ -498,20 +520,20 @@
 - FOREIGN KEY (usage_type_id) REFERENCES dictionary.placement_usage_types(id)
 - CHECK (end_date IS NULL OR end_date > start_date)
 
-### Таблица `payments`
-| Колонка     | Тип         | Ограничения                         | Комментарий                             |
-|-------------|-------------|-------------------------------------|-----------------------------------------|
-| id          | bigint      | NOT NULL                            | Уникальный идентификатор платежа       |
-| contract_id | bigint      | NOT NULL                            | Идентификатор договора                 |
-| placement_id| bigint      |                                     | Идентификатор размещения               |
-| payment_date| date        | NOT NULL                            | Дата фактической оплаты                |
-| amount      | decimal(15,2)| NOT NULL CHECK (amount > 0)        | Сумма платежа                          |
-| period_start| date        | NOT NULL                            | Начало оплачиваемого периода           |
-| period_end  | date        | NOT NULL                            | Конец оплачиваемого периода            |
-| payment_type| text        |                                     | Тип платежа: card, cashless, cash      |
-| status_code | varchar(20) | FK, NOT NULL DEFAULT 'pending'      | Ссылка на payment_statuses.code        |
-| created_at  | timestamptz | NOT NULL DEFAULT now()              | Дата создания записи                   |
-| updated_at  | timestamptz | NOT NULL DEFAULT now()              | Дата обновления записи                 |
+### Таблица `payments`. Платежи по договорам. История всех платежей с привязкой к периодам, типам оплаты и статусам обработки.
+| Колонка      | Тип           | Ограничения                    | Комментарий                       |
+|--------------|---------------|--------------------------------|-----------------------------------|
+| id           | bigint        | NOT NULL                       | Уникальный идентификатор платежа  |
+| contract_id  | bigint        | NOT NULL                       | Идентификатор договора            |
+| placement_id | bigint        |                                | Идентификатор размещения          |
+| payment_date | date          | NOT NULL                       | Дата фактической оплаты           |
+| amount       | decimal(15,2) | NOT NULL CHECK (amount > 0)    | Сумма платежа                     |
+| period_start | date          | NOT NULL                       | Начало оплачиваемого периода      |
+| period_end   | date          | NOT NULL                       | Конец оплачиваемого периода       |
+| payment_type | text          |                                | Тип платежа: card, cashless, cash |
+| status_code  | varchar(20)   | FK, NOT NULL DEFAULT 'pending' | Ссылка на payment_statuses.code   |
+| created_at   | timestamptz   | NOT NULL DEFAULT now()         | Дата создания записи              |
+| updated_at   | timestamptz   | NOT NULL DEFAULT now()         | Дата обновления записи            |
 
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
@@ -520,20 +542,20 @@
 - FOREIGN KEY (status_code) REFERENCES dictionary.payment_statuses(code)
 - CHECK (period_end > period_start)
 
-### Таблица `entity_responsibilities`
-| Колонка            | Тип         | Ограничения            | Комментарий                             |
-|--------------------|-------------|------------------------|-----------------------------------------|
-| id                 | bigint      | NOT NULL               | Уникальный идентификатор связи         |
-| entity_type        | text        | NOT NULL               | Тип сущности                           |
-| entity_id          | bigint      | NOT NULL               | ID сущности                            |
-| person_id          | bigint      | NOT NULL               | Идентификатор ответственного лица      |
-| responsibility_type| text        | NOT NULL               | Тип ответственности                    |
-| start_date         | date        | NOT NULL               | Дата начала ответственности            |
-| end_date          | date        |                        | Дата окончания ответственности         |
-| is_primary        | boolean     | DEFAULT false          | Является ли основным ответственным     |
-| notes             | text        |                        | Дополнительные примечания              |
-| created_at        | timestamptz | NOT NULL DEFAULT now() | Дата создания записи                   |
-| updated_at        | timestamptz | NOT NULL DEFAULT now() | Дата обновления записи                 |
+### Таблица `entity_responsibilities`. Ответственность за сущности. Назначает ответственных лиц к любым сущностям системы (зданиям, договорам, оборудованию).
+| Колонка             | Тип         | Ограничения            | Комментарий                        |
+|---------------------|-------------|------------------------|------------------------------------|
+| id                  | bigint      | NOT NULL               | Уникальный идентификатор связи     |
+| entity_type         | text        | NOT NULL               | Тип сущности                       |
+| entity_id           | bigint      | NOT NULL               | ID сущности                        |
+| person_id           | bigint      | NOT NULL               | Идентификатор ответственного лица  |
+| responsibility_type | text        | NOT NULL               | Тип ответственности                |
+| start_date          | date        | NOT NULL               | Дата начала ответственности        |
+| end_date            | date        |                        | Дата окончания ответственности     |
+| is_primary          | boolean     | DEFAULT false          | Является ли основным ответственным |
+| notes               | text        |                        | Дополнительные примечания          |
+| created_at          | timestamptz | NOT NULL DEFAULT now() | Дата создания записи               |
+| updated_at          | timestamptz | NOT NULL DEFAULT now() | Дата обновления записи             |
 
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
@@ -542,41 +564,41 @@
 
 ---
 
-## Схема `fire`
+## Схема `fire`. Пожарная безопасность. Управляет оборудованием пожарной сигнализации, отслеживает события и обеспечивает техническое обслуживание.
 
-### Таблица `buses`
-| Колонка     | Тип         | Ограничения                           | Комментарий                             |
-|-------------|-------------|---------------------------------------|-----------------------------------------|
-| id          | bigint      | NOT NULL                              | Уникальный идентификатор шины          |
-| name        | text        | NOT NULL UNIQUE                       | Наименование шины                      |
-| description | text        |                                       | Описание шины                          |
-| building_id | bigint      | NOT NULL                              | Ссылка на здание                       |
-| status_code | varchar(20) | FK, NOT NULL                          | Ссылка на equipment_statuses.code      |
-| last_check  | timestamptz |                                       | Время последней проверки               |
-| created_at  | timestamptz | NOT NULL DEFAULT now()                | Дата создания записи                   |
-| updated_at  | timestamptz | NOT NULL DEFAULT now()                | Дата обновления записи                 |
+### Таблица `buses`. Шины пожарной системы. Линии связи, которыми подключено оборудование пожарной сигнализации в здании.
+| Колонка     | Тип         | Ограничения            | Комментарий                       |
+|-------------|-------------|------------------------|-----------------------------------|
+| id          | bigint      | NOT NULL               | Уникальный идентификатор шины     |
+| name        | text        | NOT NULL UNIQUE        | Наименование шины                 |
+| description | text        |                        | Описание шины                     |
+| building_id | bigint      | NOT NULL               | Ссылка на здание                  |
+| status_code | varchar(20) | FK, NOT NULL           | Ссылка на equipment_statuses.code |
+| last_check  | timestamptz |                        | Время последней проверки          |
+| created_at  | timestamptz | NOT NULL DEFAULT now() | Дата создания записи              |
+| updated_at  | timestamptz | NOT NULL DEFAULT now() | Дата обновления записи            |
 
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
 - FOREIGN KEY (building_id) REFERENCES physical.buildings(id)
 - FOREIGN KEY (status_code) REFERENCES dictionary.equipment_statuses(code)
 
-### Таблица `sensors`
-| Колонка          | Тип         | Ограничения                           | Комментарий                             |
-|------------------|-------------|---------------------------------------|-----------------------------------------|
-| id               | bigint      | NOT NULL                              | Уникальный идентификатор датчика       |
-| device_id        | text        | NOT NULL UNIQUE                       | Уникальный серийный номер устройства   |
-| bus_id           | bigint      | FK, NOT NULL                          | Ссылка на шину                         |
-| room_id          | bigint      |                                       | Ссылка на помещение                    |
-| zone_id          | bigint      |                                       | Ссылка на зону                         |
-| description      | text        |                                       | Описание датчика                       |
-| type_id          | bigint      | FK, NOT NULL                          | Ссылка на sensor_types.id              |
-| model            | text        |                                       | Модель датчика                         |
-| installation_date| date        | NOT NULL                              | Дата установки                         |
-| last_maintenance | date        |                                       | Дата последнего обслуживания           |
-| status_code      | varchar(20) | FK, NOT NULL                          | Ссылка на equipment_statuses.code      |
-| created_at       | timestamptz | NOT NULL DEFAULT now()                | Дата создания записи                   |
-| updated_at       | timestamptz | NOT NULL DEFAULT now()                | Дата обновления записи                 |
+### Таблица `sensors`. Датчики пожарной сигнализации. Конкретные датчики с привязкой к месту установки, шине и техническим характеристикам.
+| Колонка           | Тип         | Ограничения            | Комментарий                          |
+|-------------------|-------------|------------------------|--------------------------------------|
+| id                | bigint      | NOT NULL               | Уникальный идентификатор датчика     |
+| device_id         | text        | NOT NULL UNIQUE        | Уникальный серийный номер устройства |
+| bus_id            | bigint      | FK, NOT NULL           | Ссылка на шину                       |
+| room_id           | bigint      |                        | Ссылка на помещение                  |
+| zone_id           | bigint      |                        | Ссылка на зону                       |
+| description       | text        |                        | Описание датчика                     |
+| type_id           | bigint      | FK, NOT NULL           | Ссылка на sensor_types.id            |
+| model             | text        |                        | Модель датчика                       |
+| installation_date | date        | NOT NULL               | Дата установки                       |
+| last_maintenance  | date        |                        | Дата последнего обслуживания         |
+| status_code       | varchar(20) | FK, NOT NULL           | Ссылка на equipment_statuses.code    |
+| created_at        | timestamptz | NOT NULL DEFAULT now() | Дата создания записи                 |
+| updated_at        | timestamptz | NOT NULL DEFAULT now() | Дата обновления записи               |
 
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
@@ -584,62 +606,65 @@
 - FOREIGN KEY (type_id) REFERENCES dictionary.sensor_types(id)
 - FOREIGN KEY (status_code) REFERENCES dictionary.equipment_statuses(code)
 
-### Таблица `sensor_events`
-| Колонка     | Тип         | Ограничения                           | Комментарий                             |
-|-------------|-------------|---------------------------------------|-----------------------------------------|
-| id          | bigint      | NOT NULL                              | Уникальный идентификатор события       |
-| sensor_id   | bigint      | FK, NOT NULL                          | Ссылка на датчик                       |
-| description | text        |                                       | Описание события                       |
-| event_type  | text        | NOT NULL CHECK (event_type IN ('triggered', 'normal', 'battery_low', 'disconnected', 'test')) | Тип события |
-| old_status  | varchar(20) |                                       | Предыдущий статус                      |
-| new_status  | varchar(20) | NOT NULL                              | Новый статус                           |
-| value       | numeric(10,2)|                                      | Измеренное значение                    |
-| resolved_at | timestamptz |                                       | Время разрешения события               |
-| resolved_by | bigint      |                                       | Кто разрешил                           |
-| created_at  | timestamptz | NOT NULL DEFAULT now()                | Дата создания записи                   |
-| updated_at  | timestamptz | NOT NULL DEFAULT now()                | Дата обновления записи                 |
+### Таблица `sensor_events`. События датчиков. Журнал всех событий датчиков (срабатывания, неисправности, тесты) с временными метками.
+| Колонка          | Тип           | Ограничения            | Комментарий                      |
+|------------------|---------------|------------------------|----------------------------------|
+| id               | bigint        | NOT NULL               | Уникальный идентификатор события |
+| sensor_id        | bigint        | FK, NOT NULL           | Ссылка на датчик                 |
+| description      | text          |                        | Описание события                 |
+| event_type_id    | bigint        | FK, NOT NULL           | Ссылка на тип события            |
+| old_status       | varchar(20)   |                        | Предыдущий статус                |
+| new_status       | varchar(20)   | NOT NULL               | Новый статус                     |
+| value            | numeric(10,2) |                        | Измеренное значение              |
+| resolved_at      | timestamptz   |                        | Время разрешения события         |
+| resolved_by      | bigint        |                        | Кто разрешил (user.id)           |
+| resolution_notes | text		       |                        | Примечания по разрешению         |
+| created_at       | timestamptz   | NOT NULL DEFAULT now() | Дата создания записи             |
+| updated_at       | timestamptz   | NOT NULL DEFAULT now() | Дата обновления записи           |
 
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
 - FOREIGN KEY (sensor_id) REFERENCES sensors(id)
+- FOREIGN KEY (event_type_id) REFERENCES sensor_event_types(id)
+- FOREIGN KEY (resolved_by) REFERENCES security.users(id)
 
-### Таблица `emergency_scenarios`
-| Колонка   | Тип         | Ограничения                           | Комментарий                             |
-|-----------|-------------|---------------------------------------|-----------------------------------------|
-| id        | bigint      | NOT NULL                              | Уникальный идентификатор сценария      |
-| name      | text        | NOT NULL                              | Название сценария                      |
-| description| text       |                                       | Описание сценария                      |
-| conditions| jsonb       | NOT NULL                              | Условия срабатывания в JSON            |
-| actions   | jsonb       | NOT NULL                              | Действия при срабатывании в JSON       |
-| priority  | integer     | CHECK (priority >= 1 AND priority <= 10) | Приоритет (1 - наивысший)         |
-| is_active | boolean     | DEFAULT true                          | Активен ли сценарий                    |
-| created_at| timestamptz | NOT NULL DEFAULT now()                | Дата создания записи                   |
-| updated_at| timestamptz | NOT NULL DEFAULT now()                | Дата обновления записи                 |
+### Таблица `emergency_scenarios`. Сценарии аварийных ситуаций. Автоматические реакции системы при срабатывании пожарной сигнализации (уведомления, команды).
+| Колонка     | Тип         | Ограничения                              | Комментарий                       |
+|-------------|-------------|------------------------------------------|-----------------------------------|
+| id          | bigint      | NOT NULL                                 | Уникальный идентификатор сценария |
+| name        | text        | NOT NULL                                 | Название сценария                 |
+| description | text        |                                          | Описание сценария                 |
+| conditions  | jsonb       | NOT NULL                                 | Условия срабатывания в JSON       |
+| actions     | jsonb       | NOT NULL                                 | Действия при срабатывании в JSON  |
+| priority    | integer     | CHECK (priority >= 1 AND priority <= 10) | Приоритет (1 - наивысший)         |
+| is_active   | boolean     | DEFAULT true                             | Активен ли сценарий               |
+| created_at  | timestamptz | NOT NULL DEFAULT now()                   | Дата создания записи              |
+| updated_at  | timestamptz | NOT NULL DEFAULT now()                   | Дата обновления записи            |
 
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
 
 ---
 
-## Схема `audit`
+## Схема `audit`. Аудит и журналирование. Обеспечивает полную подотчётность всех действий в системе, включая возможность восстановления данных.
 
-### Таблица `change_log`
-| Колонка       | Тип         | Ограничения            | Комментарий                             |
-|---------------|-------------|------------------------|-----------------------------------------|
-| id            | bigint      | NOT NULL               | Уникальный идентификатор               |
-| table_schema  | varchar(50) | NOT NULL               | Схема таблицы                          |
-| table_name    | varchar(100)| NOT NULL               | Имя таблицы                            |
-| record_id     | bigint      | NOT NULL               | ID записи                              |
-| operation     | varchar(10) | NOT NULL               | Тип: INSERT, UPDATE, DELETE            |
-| old_data      | jsonb       |                        | Данные до изменения                    |
-| new_data      | jsonb       |                        | Данные после изменения                 |
-| is_deleted    | boolean     | DEFAULT false          | Флаг удаления записи                   |
-| changed_by    | varchar(100)|                        | Кто изменил                            |
-| changed_at    | timestamptz | NOT NULL DEFAULT now() | Когда изменил                          |
-| ip_address    | inet        |                        | IP-адрес                               |
-| transaction_id| uuid        |                        | ID транзакции для группировки         |
-| created_at    | timestamptz | NOT NULL DEFAULT now() | Дата создания записи                   |
-| updated_at    | timestamptz | NOT NULL DEFAULT now() | Дата обновления записи                 |
+### Таблица `change_log`. Журнал изменений данных. Фиксирует ВСЕ изменения во ВСЕХ таблицах системы (INSERT, UPDATE, DELETE) с детализацией.
+| Колонка        | Тип          | Ограничения            | Комментарий                   |
+|----------------|--------------|------------------------|-------------------------------|
+| id             | bigint       | NOT NULL               | Уникальный идентификатор      |
+| table_schema   | varchar(50)  | NOT NULL               | Схема таблицы                 |
+| table_name     | varchar(100) | NOT NULL               | Имя таблицы                   |
+| record_id      | bigint       | NOT NULL               | ID записи                     |
+| operation      | varchar(10)  | NOT NULL               | Тип: INSERT, UPDATE, DELETE   |
+| old_data       | jsonb        |                        | Данные до изменения           |
+| new_data       | jsonb        |                        | Данные после изменения        |
+| is_deleted     | boolean      | DEFAULT false          | Флаг удаления записи          |
+| changed_by     | varchar(100) |                        | Кто изменил                   |
+| changed_at     | timestamptz  | NOT NULL DEFAULT now() | Когда изменил                 |
+| ip_address     | inet         |                        | IP-адрес                      |
+| transaction_id | uuid         |                        | ID транзакции для группировки |
+| created_at     | timestamptz  | NOT NULL DEFAULT now() | Дата создания записи          |
+| updated_at     | timestamptz  | NOT NULL DEFAULT now() | Дата обновления записи        |
 
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
@@ -647,22 +672,22 @@
 - INDEX idx_change_log_operation (operation, is_deleted)
 - INDEX idx_change_log_transaction (transaction_id)
 
-### Таблица `deleted_records_archive`
-| Колонка               | Тип         | Ограничения            | Комментарий                             |
-|-----------------------|-------------|------------------------|-----------------------------------------|
-| id                    | bigint      | NOT NULL               | Уникальный ID архива                   |
-| original_table_schema | varchar(50) | NOT NULL               | Исходная схема                         |
-| original_table_name   | varchar(100)| NOT NULL               | Исходная таблица                       |
-| original_record_id    | bigint      | NOT NULL               | Исходный ID записи                     |
-| record_data           | jsonb       | NOT NULL               | Полная копия записи                    |
-| deleted_by            | varchar(100)|                        | Кто удалил                             |
-| deleted_at            | timestamptz | NOT NULL DEFAULT now() | Когда удалил                           |
-| deletion_reason       | text        |                        | Причина удаления                       |
-| can_be_restored       | boolean     | DEFAULT true           | Можно ли восстановить                  |
-| restored_at           | timestamptz |                        | Когда восстановили                     |
-| restored_by           | varchar(100)|                        | Кто восстановил                        |
-| created_at            | timestamptz | NOT NULL DEFAULT now() | Дата создания записи                   |
-| updated_at            | timestamptz | NOT NULL DEFAULT now() | Дата обновления записи                 |
+### Таблица `deleted_records_archive`. Архив удалённых записей. Полные копии удалённых записей с возможностью восстановления и указанием причины удаления.
+| Колонка               | Тип          | Ограничения            | Комментарий            |
+|-----------------------|--------------|------------------------|------------------------|
+| id                    | bigint       | NOT NULL               | Уникальный ID архива   |
+| original_table_schema | varchar(50)  | NOT NULL               | Исходная схема         |
+| original_table_name   | varchar(100) | NOT NULL               | Исходная таблица       |
+| original_record_id    | bigint       | NOT NULL               | Исходный ID записи     |
+| record_data           | jsonb        | NOT NULL               | Полная копия записи    |
+| deleted_by            | varchar(100) |                        | Кто удалил             |
+| deleted_at            | timestamptz  | NOT NULL DEFAULT now() | Когда удалил           |
+| deletion_reason       | text         |                        | Причина удаления       |
+| can_be_restored       | boolean      | DEFAULT true           | Можно ли восстановить  |
+| restored_at           | timestamptz  |                        | Когда восстановили     |
+| restored_by           | varchar(100) |                        | Кто восстановил        |
+| created_at            | timestamptz  | NOT NULL DEFAULT now() | Дата создания записи   |
+| updated_at            | timestamptz  | NOT NULL DEFAULT now() | Дата обновления записи |
 
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
@@ -670,36 +695,36 @@
 - INDEX idx_deleted_archive_date (deleted_at)
 - INDEX idx_deleted_archive_restorable (can_be_restored) WHERE can_be_restored = true
 
-### Таблица `system_log`
-| Колонка   | Тип         | Ограничения            | Комментарий                             |
-|-----------|-------------|------------------------|-----------------------------------------|
-| id        | bigint      | NOT NULL               | Уникальный идентификатор               |
-| log_level | text        | NOT NULL               | Уровень: DEBUG, INFO, WARN, ERROR, FATAL |
-| module    | text        |                        | Модуль системы                         |
-| message   | text        | NOT NULL               | Текст сообщения                        |
-| details   | jsonb       |                        | Дополнительные данные в JSON           |
-| user_id   | text        |                        | Идентификатор пользователя             |
-| ip_address| inet        |                        | IP-адрес источника                     |
-| created_at| timestamptz | NOT NULL DEFAULT now() | Дата создания записи                   |
-| updated_at| timestamptz | NOT NULL DEFAULT now() | Дата обновления записи                 |
+### Таблица `system_log`. Системный журнал. Журналирует системные события (ошибки, предупреждения, информационные сообщения).
+| Колонка    | Тип         | Ограничения            | Комментарий                              |
+|------------|-------------|------------------------|------------------------------------------|
+| id         | bigint      | NOT NULL               | Уникальный идентификатор                 |
+| log_level  | text        | NOT NULL               | Уровень: DEBUG, INFO, WARN, ERROR, FATAL |
+| module     | text        |                        | Модуль системы                           |
+| message    | text        | NOT NULL               | Текст сообщения                          |
+| details    | jsonb       |                        | Дополнительные данные в JSON             |
+| user_id    | text        |                        | Идентификатор пользователя               |
+| ip_address | inet        |                        | IP-адрес источника                       |
+| created_at | timestamptz | NOT NULL DEFAULT now() | Дата создания записи                     |
+| updated_at | timestamptz | NOT NULL DEFAULT now() | Дата обновления записи                   |
 
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
 
-### Таблица `user_action_log`
-| Колонка     | Тип         | Ограничения            | Комментарий                             |
-|-------------|-------------|------------------------|-----------------------------------------|
-| id          | bigint      | NOT NULL               | Уникальный идентификатор               |
-| user_id     | bigint      |                        | ID пользователя                         |
-| action      | varchar(100)| NOT NULL               | Действие (login, search, export)       |
-| entity_type | varchar(50) |                        | Тип сущности                           |
-| entity_id   | bigint      |                        | ID сущности                            |
-| details     | jsonb       |                        | Детали действия в JSON                 |
-| ip_address  | inet        |                        | IP-адрес пользователя                  |
-| user_agent  | text        |                        | Информация о клиентском приложении     |
-| performed_at| timestamptz |                        | Время выполнения действия              |
-| created_at  | timestamptz | NOT NULL DEFAULT now() | Дата создания записи                   |
-| updated_at  | timestamptz | NOT NULL DEFAULT now() | Дата обновления записи                 |
+### Таблица `user_action_log`. Журнал действий пользователей. Отслеживает действия пользователей в интерфейсе системы (поиск, экспорт, навигация).
+| Колонка      | Тип          | Ограничения            | Комментарий                        |
+|--------------|--------------|------------------------|------------------------------------|
+| id           | bigint       | NOT NULL               | Уникальный идентификатор           |
+| user_id      | bigint       |                        | ID пользователя                    |
+| action       | varchar(100) | NOT NULL               | Действие (login, search, export)   |
+| entity_type  | varchar(50)  |                        | Тип сущности                       |
+| entity_id    | bigint       |                        | ID сущности                        |
+| details      | jsonb        |                        | Детали действия в JSON             |
+| ip_address   | inet         |                        | IP-адрес пользователя              |
+| user_agent   | text         |                        | Информация о клиентском приложении |
+| performed_at | timestamptz  |                        | Время выполнения действия          |
+| created_at   | timestamptz  | NOT NULL DEFAULT now() | Дата создания записи               |
+| updated_at   | timestamptz  | NOT NULL DEFAULT now() | Дата обновления записи             |
 
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
