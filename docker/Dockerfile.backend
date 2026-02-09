@@ -1,7 +1,25 @@
+# docker/Dockerfile.backend
+
+# базовый образ — лёгкий и достаточный
 FROM python:3.11-slim
+
+# рабочая директория внутри контейнера
 WORKDIR /app
-COPY requirements.txt .
+
+# копируем requirements из backend/
+COPY backend/requirements.txt .
+
+# устанавливаем зависимости
 RUN pip install --no-cache-dir -r requirements.txt
-COPY src/ ./src/
+
+# копируем весь код backend/src → /app/src
+COPY backend/src/ ./src/
+
+# для удобства отладки можно добавить .env (но лучше через --env-file или docker-compose)
+# COPY config/.env .   # ← раскомментируй, если хочешь зашить .env в образ (не рекомендуется для секретов)
+
+# добавляем PYTHONPATH, чтобы python видел модули из /app/src
 ENV PYTHONPATH=/app
+
+# запуск FastAPI (uvicorn) с авто-перезагрузкой в dev-режиме
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

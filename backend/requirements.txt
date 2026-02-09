@@ -1,6 +1,17 @@
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-sqlalchemy==2.0.23
-psycopg2-binary==2.9.9
-pydantic==2.5.0
-python-dotenv==1.0.0
+# backend/requirements.txt
+
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0          # сервер + логи + websockets
+sqlalchemy>=2.0.0                  # ORM
+psycopg2-binary>=2.9.9             # драйвер PostgreSQL (бинарный — проще в Docker)
+pydantic>=2.8.0,<3.0               # уже идёт с FastAPI, но фиксируем версию
+pydantic-settings>=2.0.0           # удобное чтение .env (наследуется от BaseSettings)
+python-dotenv>=1.0.0               # если будешь читать .env вручную
+
+# Опционально, но очень полезно на старте
+alembic>=1.13.0                    # миграции БД (если планируешь их использовать)
+anyio>=4.0                         # иногда нужен для совместимости
+
+# Для отладки и разработки
+httpx>=0.27.0                      # удобный клиент для тестов API
+pytest>=8.0                        # если будешь писать тесты
