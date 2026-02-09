@@ -30,4 +30,6 @@ Markoff_2.0/
 │   └── environments/
 │       └── dev-compose.yml          # (пока можно оставить, но необязательно)
 │
-└── .gitignore
+├── .gitignore
+│
+└── build-backend.bat
