@@ -3,35 +3,23 @@ Markoff_2.0/
 │   ├── .env                         # DATABASE_URL, другие секреты
 │   └── backend.env                  # (опционально, если хочешь разделить)
 │
-├── backend/                         # только эта часть сейчас нужна
+├── client/                   
 │   ├── src/
-│   │   ├── __init__.py
-│   │   ├── main.py                  # FastAPI приложение
+│   │   ├── __init__.py      
+│   │   ├── main.py          
 │   │   ├── api/
-│   │   │   ├── routers/
-│   │   │   │   ├── buildings.py
-│   │   │   │   ├── tenants.py
-│   │   │   │   ├── sensors.py
-│   │   │   │   └── health.py
-│   │   │   └── dependencies.py      # db сессия, аутентификация и т.д.
-│   │   ├── db/
-│   │   │   ├── models/              # SQLAlchemy модели
-│   │   │   │   ├── building.py
-│   │   │   │   ├── tenant.py
-│   │   │   │   └── sensor.py
-│   │   │   ├── crud/                # операции создания/чтения/обновления
-│   │   │   └── session.py           # фабрика сессий
-│   │   └── utils/
-│   │       └── helpers.py           # (если есть вспомогательные функции)
-│   └── requirements.txt             # fastapi uvicorn sqlalchemy psycopg2-binary pydantic
-│
+│   │   │   └── client.py    
+│   │   └── ui/
+│   │       └── tree_view.py 
+│   └── requirements.txt     
 ├── docker/
-│   ├── Dockerfile.backend           # для backend
+│   └── Dockerfile.client    
 │   └── environments/
 │       └── dev-compose.yml          # (пока можно оставить, но необязательно)
 │
 ├── .gitignore
 │
-├── run-backend.bat
-│
-└── build-backend.bat
+├── build-backend.ps1
+├── build-client.ps1
+├── run-backend.ps1
+└── run-client.ps1

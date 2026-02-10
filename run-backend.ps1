@@ -11,7 +11,7 @@ docker run -d `
   --rm `
   -p 8000:8000 `
   -v "${PWD}\backend\src:/app/src" `
-  -e DATABASE_URL="postgresql+psycopg2://markoff:1@192.168.2.4:5432/markoff_db" `
+  -e DATABASE_URL="postgresql+psycopg2://markoff:1@192.168.2.4:5432/markoff2_0_db" `
   -e ENVIRONMENT=development `
   -e PYTHONUNBUFFERED=1 `
   markoff-backend:dev
