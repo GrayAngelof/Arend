@@ -115,6 +115,22 @@
 
 ## Схема `dictionary`. Централизованные справочники. Содержит все общие справочные данные, используемые другими схемами. Обеспечивает единообразие и нормализацию данных.
 
+### Таблица `building_statuses`. Статусы зданий. Определяет общее состояние и доступность зданий для эксплуатации.
+| Колонка          | Тип          | Ограничения            | Комментарий                                       |
+|------------------|--------------|-----------------|----------------------------------------------------------|
+| id               | bigint       | NOT NULL        | Уникальный идентификатор статуса                         |
+| code             | varchar(20 ) | NOT NULL UNIQUE | Код статуса: operational, renovation, closed, demolished |
+| name             | varchar(100) | NOT NULL        | Название статуса                                         |
+| description      | text         |                 | Описание                                                 |
+| is_initial       | boolean      | DEFAULT false   | Можно ли установить при создании                         |
+| allows_occupancy | boolean      | DEFAULT true    | Можно ли занимать здание                                 |
+| display_order    | integer      | DEFAULT 0       | Порядок отображения                                      |
+| created_at       | timestamptz  | DEFAULT now()   | Дата создания записи                                     |
+| updated_at       | timestamptz  | DEFAULT now()   | Дата обновления записи                                   |
+
+**Ключи и ограничения:**
+- PRIMARY KEY (id)
+  
 ### Таблица `physical_room_types`. Типы физических помещений. Справочник типов помещений (офис, склад, коридор) с характеристиками для расчёта арендной ставки.
 | Колонка              | Тип          | Ограничения            | Комментарий                                  |
 |----------------------|--------------|------------------------|----------------------------------------------|
@@ -132,6 +148,23 @@
 
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
+
+### Таблица `room_statuses`. Статусы помещений. Определяет текущее состояние и доступность помещений для аренды.
+| Колонка       | Тип          | Ограничения     | Комментарий                                  |
+|---------------|--------------|-----------------|----------------------------------------------|
+| id            | bigint       | NOT NULL        | Уникальный идентификатор статуса             |
+| code          | varchar(20)  | NOT NULL UNIQUE | Код статуса: available, occupied, renovation |
+| name          | varchar(100) | NOT NULL        | Название статуса                             |
+| description   | text         |                 | Описание                                     |
+| is_initial    | boolean      | DEFAULT false   | Можно ли установить при создании             |
+| allows_rent   | boolean      | DEFAULT false   | Можно ли сдавать в этом статусе              |
+| display_order | integer      | DEFAULT 0       | Порядок отображения                          |
+| created_at    | timestamptz  | DEFAULT now()   | Дата создания записи                         |
+| updated_at    | timestamptz  | DEFAULT now()   | Дата обновления записи                       |
+
+**Ключи и ограничения:**
+- PRIMARY KEY (id)
+
 
 ### Таблица `placement_usage_types`. Типы использования площади. Определяет, как арендатор будет использовать помещение (офисное, складское, торговое), влияет на ставку аренды.
 | Колонка                    | Тип          | Ограничения            | Комментарий                                        |
@@ -209,6 +242,22 @@
 - PRIMARY KEY (id)
 - FOREIGN KEY (status_code) REFERENCES counterparty_statuses(code)
 
+### Таблица `counterparty_statuses`. Статусы контрагентов. Управляет жизненным циклом организаций (арендодателей, арендаторов, поставщиков) в системе.
+| Колонка       | Тип          | Ограничения      | Комментарий                              |
+|---------------|--------------|------------------|------------------------------------------|
+| id            | bigint       | NOT NULL         | Уникальный идентификатор статуса         |
+| code          | varchar(20)  | NOT NULL UNIQUE  | Код статуса: active, suspended, archived |
+| name          | varchar(100) | NOT NULL         | Название статуса                         |
+| description   | text         |                  | Описание                                 |
+| is_initial    | boolean      | DEFAULT false    | Можно ли установить при создании         |
+| display_order | integer      | DEFAULT 0        | Порядок отображения                      |
+| created_at    | timestamptz  | DEFAULT now()    | Дата создания записи                     |
+| updated_at    | timestamptz  | DEFAULT now()    | Дата обновления записи                   |
+
+**Ключи и ограничения:**
+- PRIMARY KEY (id)
+
+
 ### Таблица `responsible_persons`. Ответственные лица. Сотрудники и контактные лица контрагентов с категоризацией для разграничения видимости.
 | Колонка            | Тип         | Ограничения            | Комментарий                                                             |
 |--------------------|-------------|------------------------|-------------------------------------------------------------------------|
@@ -260,37 +309,6 @@
 | allowed_roles | text[]      |                        | Массив ролей, которые могут видеть эти контакты |
 | created_at    | timestamptz | NOT NULL DEFAULT now() | Дата создания записи                            |
 | updated_at    | timestamptz | NOT NULL DEFAULT now() | Дата обновления записи                          |
-
-**Ключи и ограничения:**
-- PRIMARY KEY (id)
-
-### Таблица `counterparty_statuses`. Статусы контрагентов. Управляет жизненным циклом организаций (арендодателей, арендаторов, поставщиков) в системе.
-| Колонка       | Тип          | Ограничения      | Комментарий                              |
-|---------------|--------------|------------------|------------------------------------------|
-| id            | bigint       | NOT NULL         | Уникальный идентификатор статуса         |
-| code          | varchar(20)  | NOT NULL UNIQUE  | Код статуса: active, suspended, archived |
-| name          | varchar(100) | NOT NULL         | Название статуса                         |
-| description   | text         |                  | Описание                                 |
-| is_initial    | boolean      | DEFAULT false    | Можно ли установить при создании         |
-| display_order | integer      | DEFAULT 0        | Порядок отображения                      |
-| created_at    | timestamptz  | DEFAULT now()    | Дата создания записи                     |
-| updated_at    | timestamptz  | DEFAULT now()    | Дата обновления записи                   |
-
-**Ключи и ограничения:**
-- PRIMARY KEY (id)
-
-### Таблица `room_statuses`. Статусы помещений. Определяет текущее состояние и доступность помещений для аренды.
-| Колонка       | Тип          | Ограничения     | Комментарий                                  |
-|---------------|--------------|-----------------|----------------------------------------------|
-| id            | bigint       | NOT NULL        | Уникальный идентификатор статуса             |
-| code          | varchar(20)  | NOT NULL UNIQUE | Код статуса: available, occupied, renovation |
-| name          | varchar(100) | NOT NULL        | Название статуса                             |
-| description   | text         |                 | Описание                                     |
-| is_initial    | boolean      | DEFAULT false   | Можно ли установить при создании             |
-| allows_rent   | boolean      | DEFAULT false   | Можно ли сдавать в этом статусе              |
-| display_order | integer      | DEFAULT 0       | Порядок отображения                          |
-| created_at    | timestamptz  | DEFAULT now()   | Дата создания записи                         |
-| updated_at    | timestamptz  | DEFAULT now()   | Дата обновления записи                       |
 
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
@@ -354,22 +372,6 @@
 | display_order  | integer      | DEFAULT 0       | Порядок отображения                                        |
 | created_at     | timestamptz  | DEFAULT now()   | Дата создания записи                                       |
 | updated_at     | timestamptz  | DEFAULT now()   | Дата обновления записи                                     |
-
-**Ключи и ограничения:**
-- PRIMARY KEY (id)
-
-### Таблица `building_statuses`. Статусы зданий. Определяет общее состояние и доступность зданий для эксплуатации.
-| Колонка          | Тип          | Ограничения            | Комментарий                                       |
-|------------------|--------------|-----------------|----------------------------------------------------------|
-| id               | bigint       | NOT NULL        | Уникальный идентификатор статуса                         |
-| code             | varchar(20 ) | NOT NULL UNIQUE | Код статуса: operational, renovation, closed, demolished |
-| name             | varchar(100) | NOT NULL        | Название статуса                                         |
-| description      | text         |                 | Описание                                                 |
-| is_initial       | boolean      | DEFAULT false   | Можно ли установить при создании                         |
-| allows_occupancy | boolean      | DEFAULT true    | Можно ли занимать здание                                 |
-| display_order    | integer      | DEFAULT 0       | Порядок отображения                                      |
-| created_at       | timestamptz  | DEFAULT now()   | Дата создания записи                                     |
-| updated_at       | timestamptz  | DEFAULT now()   | Дата обновления записи                                   |
 
 **Ключи и ограничения:**
 - PRIMARY KEY (id)
