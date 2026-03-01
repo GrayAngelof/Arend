@@ -7,13 +7,13 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # копируем requirements из backend/
-COPY backend/requirements.txt .
+COPY requirements.txt .
 
 # устанавливаем зависимости
 RUN pip install --no-cache-dir -r requirements.txt
 
 # копируем весь код backend/src → /app/src
-COPY backend/src/ ./src/
+COPY src/ ./src/
 
 # для удобства отладки можно добавить .env (но лучше через --env-file или docker-compose)
 # COPY config/.env .   # ← раскомментируй, если хочешь зашить .env в образ (не рекомендуется для секретов)
